@@ -125,6 +125,8 @@ void CollisionNodes::findInterpNodes() {
                 for (int j = 0; j <= 1; j++) {
                     Index2d current_eta = Index2d(eta_floor.ix + i, eta_floor.iy + j);
                     Index2d current_eta_1 = Index2d(alpha.ix + beta.ix - current_eta.ix, alpha.iy + beta.iy - current_eta.iy);
+                    if (p_v_mesh->safeIndexToP(current_eta) == 0)
+                        continue;
                     double current_energy = p_v_mesh->getNodeEnergy(current_eta, v_c);
                     if ((p_v_mesh->safeIndexToP(current_eta) != 0) and (p_v_mesh->safeIndexToP(current_eta_1) != 0) and (current_energy < energy_true)) {
                         double curr_eta_distance = p_v_mesh->getNodeEnergy(current_eta, v_alpha_new);
@@ -159,6 +161,8 @@ void CollisionNodes::findInterpNodes() {
                 for (int j = 0; j <= 1; j++) {
                     Index2d current_eta = Index2d(eta_floor.ix + i, eta_floor.iy + j);
                     Index2d current_eta_1 = Index2d(alpha.ix + beta.ix - current_eta.ix, alpha.iy + beta.iy - current_eta.iy);
+                    if (p_v_mesh->safeIndexToP(current_eta) == 0)
+                        continue;
                     double current_energy = p_v_mesh->getNodeEnergy(current_eta, v_c);
                     if ((p_v_mesh->safeIndexToP(current_eta) != 0) and (p_v_mesh->safeIndexToP(current_eta_1) != 0) and (current_energy > energy_true)) {
                         double curr_eta_distance = p_v_mesh->getNodeEnergy(current_eta, v_alpha_new);
