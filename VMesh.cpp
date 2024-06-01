@@ -16,6 +16,7 @@ double expTemp2(double v_x, double v_y, double temp_1, double temp_2) {
 VMesh::VMesh(double v_cut, int n_v_x, int n_v_y, double temp_1, double temp_2) : v_cut(v_cut), v_x_mesh(-v_cut, v_cut, n_v_x), 
                         v_y_mesh(-v_cut, v_cut, n_v_y), n_v_x(n_v_x), n_v_y(n_v_y) {
     int p = 0;
+    c_norm = 0;
     index_to_p.resize(n_v_x, n_v_y);
     for (int a_x = 1; a_x <= n_v_x; a_x++) {
         for (int a_y = 1; a_y <= n_v_y; a_y++) {
@@ -23,7 +24,10 @@ VMesh::VMesh(double v_cut, int n_v_x, int n_v_y, double temp_1, double temp_2) :
             if (v_2 <= pow(v_cut, 2)) {
                 p++;
                 index_to_p.at(a_x, a_y) = p;
-                init_v_distr.push_back(initDistrFunction(v_x_mesh.at(a_x), v_y_mesh.at(a_y), temp_1, temp_2));
+                double init_distr_value = initDistrFunction(v_x_mesh.at(a_x), v_y_mesh.at(a_y), temp_1, temp_2);
+                c_norm += init_distr_value;
+                v_squared.push_back(v_2);
+                init_v_distr.push_back(init_distr_value);
                 exp_t1.push_back(expTemp1(v_x_mesh.at(a_x), v_y_mesh.at(a_y)));
                 exp_t2.push_back(expTemp2(v_x_mesh.at(a_x), v_y_mesh.at(a_y), temp_1, temp_2));
                 if (a_x <= n_v_x / 2) {

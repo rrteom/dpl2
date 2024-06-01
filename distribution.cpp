@@ -220,12 +220,24 @@ TwoDArr Distribution::getConcentration() {
             for (int p = 1; p <= distr.dimp_; p++) {
                 n_current += distr.at(i, j, p);
             }
-            n.at(i, j) = n_current;
+            n.at(i, j) = n_current / v_mesh.c_norm;
         }
     }
-
+    return n;
 }
 
 TwoDArr Distribution::getTemperature() {
-
+    TwoDArr n = getConcentration();
+    TwoDArr temperature(distr.dimx_, distr.dimy_);
+    for (int i = 1; i <= distr.dimx_; i++) {
+        for (int j = 1; j <= distr.dimy_; j++) {
+            double t_current = 0;
+            for (int p = 1; p <= distr.dimp_; p++) {
+                t_current += distr.at(i, j, p) * v_mesh.v_squared.at(p);
+            }
+            if (n.at(i, j) != 0)
+                temperature.at(i, j) = t_current  / 2 / n.at(i, j) * temp_1 / v_mesh.c_norm;
+        }
+    }
+    return temperature;
 }

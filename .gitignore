@@ -3,3 +3,5 @@ test
 *.o
 col_test/*
 col_test
+intgr_test/*
+intgr_test
