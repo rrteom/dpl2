@@ -2,6 +2,7 @@
 #define DISTRIBUTION_HPP
 
 #include "VMesh.hpp"
+#include "CollisionNodes.hpp"
 #include <iostream>
 
 double sgn (double x);
@@ -30,6 +31,7 @@ public:
     TwoDArr getTemperature();
     double getTau0();
     void step1DY(double tau_y);
+    void collisionStep11(CollisionNodes cn);
 };
 
 #endif

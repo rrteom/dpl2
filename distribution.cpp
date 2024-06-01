@@ -257,3 +257,9 @@ TwoDArr Distribution::getTemperature() {
 double Distribution::getTau0() {
     return std::min(h_x, h_y) / v_cut;
 }
+
+void Distribution::collisionStep11(CollisionNodes cn) {
+    int ix = 1, iy = 1;
+    std::vector<int> permutation = cn.generatePermutation();
+    
+}

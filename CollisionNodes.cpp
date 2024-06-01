@@ -211,3 +211,16 @@ void CollisionNodes::prepareNodes(std::vector<unsigned int> korobov_coefs) {
     findInterpNodes();
     return;
 }
+
+std::vector<int> CollisionNodes::generatePermutation() {
+    std::vector<int> initial, result;
+    for (int i = 0; i < n_nodes; i++)
+        initial.push_back(i);
+    for (int i = 0; i < n_nodes; i++) {
+        int rand_index = rand() % initial.size();
+        result.push_back(initial[rand_index]);
+        std::swap(initial[rand_index], initial[initial.size() - 1]);
+        initial.pop_back();
+    }
+    return result;
+}

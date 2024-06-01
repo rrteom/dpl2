@@ -12,28 +12,35 @@ void logging_append(Distribution);
 
 int main() {
     int n_v_x = 20, n_v_y = 20;
-    // std::vector<unsigned int> koefs = {1, 11281, 7537, 39218, 32534, 11977};
+    std::vector<unsigned int> koefs = {1, 11281, 7537, 39218, 32534, 11977};
     VMesh v_mesh(4.8, n_v_x, n_v_y, 1, 2);
     
-    // CollisionNodes nodes(50021, &v_mesh, 1);
-    // nodes.prepareNodes(koefs);
+    CollisionNodes collision_nodes(50021, &v_mesh, 1);
+    collision_nodes.prepareNodes(koefs);
     Distribution distribution(50, 50, 20, 20,
                  4.8, n_v_x, n_v_y,
                  1, 2, 1,
                  6, 6, 15, 15);
 
     double tau_0 = distribution.getTau0();
-    double tau_x = tau_0 / 2, tau_y = tau_0; 
+    double tau_x = tau_0 / 4, tau_y = tau_0 / 2; 
     cout << "tau_0: " << tau_0 << endl;
 
     logging(distribution);
-    for (int time_step = 0; time_step < 300; time_step++) {
+    for (int time_step = 0; time_step < 10; time_step++) {
+        //space step / 2
         distribution.stepX(tau_x);
-        // logging_append(distribution);
         distribution.stepY(tau_y);
-        // logging_append(distribution);
         distribution.stepX(tau_x);
-        // distribution.step1DY(tau_y);
+
+        //collision step
+        // ditribution.collisionStep11(collision_nodes);
+
+        //space step / 2
+        distribution.stepX(tau_x);
+        distribution.stepY(tau_y);
+        distribution.stepX(tau_x);  
+        //save      
         logging_append(distribution);
     }
 
