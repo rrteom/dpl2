@@ -7,8 +7,9 @@
 class CollisionNodes {
 private:
     VMesh* p_v_mesh;
-    double s_max;
+
 public:
+    double s_max;
     int n_nodes;
     std::vector<int> int_p_alpha, int_p_beta, int_p_l, int_p_ls, int_p_m, int_p_ms;
     std::vector<double> collisions, rel_velocities, thetas, interp_r;

@@ -34,7 +34,7 @@ int main() {
         // distribution.stepX(tau_x);
 
         //collision step
-        // ditribution.collisionStep11(collision_nodes);
+        distribution.collisionStep11(collision_nodes);
 
         //space step / 2
         // distribution.stepX(tau_x);

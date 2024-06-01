@@ -262,8 +262,8 @@ void Distribution::collisionStep11(CollisionNodes cn) {
     double omega, r_interp, f_a, f_b, f_l, f_ls, f_m, f_ms;
     int n_0 = v_mesh.maxP();
     double dv_x = 2 * v_cut / n_v_x, dv_y = 2 * v_cut / n_v_y;
-    double c_coll = s_max  / 2 * dv_x * dv_y * n_0 * n_0 / cn.n_nodes;
-
+    double c_coll = cn.s_max  / 2 * dv_x * dv_y * n_0 * n_0 / cn.n_nodes;
+    int coll_no;
 
     int ix = 1, iy = 1;
     std::vector<int> permutation = cn.generatePermutation();
@@ -280,7 +280,7 @@ void Distribution::collisionStep11(CollisionNodes cn) {
         f_ms = distr.at(ix, iy, cn.int_p_ms[coll_no]);
         r_interp = cn.interp_r[coll_no];
 
-        double rel_v_abs = sqrt(Vector2d(cn.rel_velocities[2 * coll_no], cn.rel_velocities[2 * coll_no + 1]).pow2())
+        double rel_v_abs = sqrt(Vector2d(cn.rel_velocities[2 * coll_no], cn.rel_velocities[2 * coll_no + 1]).pow2());
 
         omega = rel_v_abs * (f_l * f_m * pow(f_ls * f_ms / f_l / f_m, r_interp) - f_a * f_b);
 
