@@ -25,6 +25,9 @@ public:
     void stepY(double tau_y);
     void solveOneDTask(TwoDArr& distr_1d, double t_1, double t_2, double tau, double h,
                                  OneDArr& v_proj_abs, OneDArr& v_proj_sign, OneDArr& v_exp_t_1, OneDArr& v_exp_t_2);
+    
+    TwoDArr getConcentration();
+    TwoDArr getTemperature();
 };
 
 #endif

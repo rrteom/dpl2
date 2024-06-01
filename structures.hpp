@@ -50,8 +50,8 @@ public:
 class ThreeDArr {
     // idx starts from 1
     std::vector<double> data_;
-    int dimx_, dimy_, dimp_;
 public:
+    int dimx_, dimy_, dimp_;
     ThreeDArr();
     ThreeDArr (int dimx, int dimy, int dimp);
     void resize(int dimx, int dimy, int dimp);

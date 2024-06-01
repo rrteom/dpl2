@@ -202,3 +202,12 @@ void CollisionNodes::findInterpNodes() {
     }
     return;
 }
+
+void CollisionNodes::prepareNodes(std::vector<unsigned int> korobov_coefs) {
+    randomizeNodes(korobov_coefs);
+    scaleValues();
+    checkOutOfSphere();
+    calculateRelVelocitiesAfterCollision();
+    findInterpNodes();
+    return;
+}

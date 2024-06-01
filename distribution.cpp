@@ -210,3 +210,22 @@ void Distribution::solveOneDTask(TwoDArr& f, double t_1, double t_2, double tau,
     }
     return;
 }
+
+
+TwoDArr Distribution::getConcentration() {
+    TwoDArr n(distr.dimx_, distr.dimy_);
+    for (int i = 1; i <= distr.dimx_; i++) {
+        for (int j = 1; j <= distr.dimy_; j++) {
+            double n_current = 0;
+            for (int p = 1; p <= distr.dimp_; p++) {
+                n_current += distr.at(i, j, p);
+            }
+            n.at(i, j) = n_current;
+        }
+    }
+
+}
+
+TwoDArr Distribution::getTemperature() {
+
+}

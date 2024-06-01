@@ -10,7 +10,7 @@ double expTemp2(double v_x, double v_y, double temp_1, double temp_2);
 class VMesh {
     OneDArr v_x_mesh, v_y_mesh, init_v_distr;
     TwoDArr index_to_p;
-    double v_cut;
+    double v_cut, c_norm;
     int max_p;
     int n_v_x, n_v_y;
 public:
