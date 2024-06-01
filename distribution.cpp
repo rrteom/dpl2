@@ -133,6 +133,19 @@ void Distribution::stepY(double tau_y) {
     }
 }
 
+void Distribution::step1DY(double tau_y) {
+    TwoDArr f_one_d(n_h_y, max_p);
+    int ix = 1;
+    for (int iy = 1; iy <= n_h_y; iy++) 
+        for (int p = 1; p <= max_p; p++) 
+            f_one_d.at(iy, p) = distr.at(ix, iy, p);
+    solveOneDTask(f_one_d, temp_2, temp_1, tau_y, h_y, v_mesh.abs_v_y, v_mesh.sign_v_y, v_mesh.exp_t2, v_mesh.exp_t1);
+    //update distr
+    for (int iy = 1; iy <= n_h_y; iy++) 
+        for (int p = 1; p <= max_p; p++) 
+            distr.at(ix, iy, p) = f_one_d.at(iy, p);
+}
+
 
 void Distribution::solveOneDTask(TwoDArr& f, double t_1, double t_2, double tau, double h_step,
                                  OneDArr& v_proj_abs, OneDArr& v_proj_sign, OneDArr& v_exp_t_1, OneDArr& v_exp_t_2) 
@@ -185,7 +198,6 @@ void Distribution::solveOneDTask(TwoDArr& f, double t_1, double t_2, double tau,
     }
 
     //diffuse reflexion
-
     for (int p = 1; p <= max_p; p++) {
         double current_gamma = v_proj_abs.at(p) * tau / h_step;
         if (v_proj_sign.at(p) < 0) {
@@ -194,7 +206,7 @@ void Distribution::solveOneDTask(TwoDArr& f, double t_1, double t_2, double tau,
             f_half.at(n_h, p) = f.at(n_h, p) - (1 - current_gamma) * mc_limiter_func(f.at(n_h - 1, p), f.at(n_h, p), f_plus.at(p));
         }
         else {
-            f_half.at(0, p) = v_exp_t_1.at(p) * wall_1_in / wall_1_out;
+            f_half.at(1, p) = v_exp_t_1.at(p) * wall_1_in / wall_1_out;
             f_zero.at(p) = std::max(0.0d, 2 * v_exp_t_1.at(p) * border_1_in / wall_1_out - f.at(1, p));
             f_half.at(2, p) = f.at(1, p) + (1 - current_gamma) * mc_limiter_func(f_zero.at(p), f.at(1, p), f.at(2, p));
         }
@@ -202,8 +214,8 @@ void Distribution::solveOneDTask(TwoDArr& f, double t_1, double t_2, double tau,
 
     // updating distr
     for (int p = 1; p <= max_p; p++) {
-        double current_gamma = v_proj_abs.at(p) * tau / h_step;
-        for (int ih = 1; ih < n_h; ih++) {
+        double current_gamma = v_proj_abs.at(p) * tau / h_step * v_proj_sign.at(p);
+        for (int ih = 1; ih <= n_h; ih++) {
             double new_f = f.at(ih, p) - current_gamma * (f_half.at(ih + 1, p) - f_half.at(ih, p));
             f.at(ih, p) = new_f;
         }
@@ -240,4 +252,8 @@ TwoDArr Distribution::getTemperature() {
         }
     }
     return temperature;
+}
+
+double Distribution::getTau0() {
+    return std::min(h_x, h_y) / v_cut;
 }

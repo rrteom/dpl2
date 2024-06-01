@@ -28,6 +28,8 @@ public:
     
     TwoDArr getConcentration();
     TwoDArr getTemperature();
+    double getTau0();
+    void step1DY(double tau_y);
 };
 
 #endif
