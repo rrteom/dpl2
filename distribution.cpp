@@ -259,7 +259,46 @@ double Distribution::getTau0() {
 }
 
 void Distribution::collisionStep11(CollisionNodes cn) {
+    double omega, r_interp, f_a, f_b, f_l, f_ls, f_m, f_ms;
+    int n_0 = v_mesh.maxP();
+    double dv_x = 2 * v_cut / n_v_x, dv_y = 2 * v_cut / n_v_y;
+    double c_coll = s_max  / 2 * dv_x * dv_y * n_0 * n_0 / cn.n_nodes;
+
+
     int ix = 1, iy = 1;
     std::vector<int> permutation = cn.generatePermutation();
-    
+    for (int initial_no = 0; initial_no < permutation.size(); initial_no++) {
+        coll_no = permutation[initial_no];
+        if (!cn.is_active[coll_no])
+            continue;
+
+        f_a = distr.at(ix, iy, cn.int_p_alpha[coll_no]);
+        f_b = distr.at(ix, iy, cn.int_p_beta[coll_no]);
+        f_l = distr.at(ix, iy, cn.int_p_l[coll_no]);
+        f_ls = distr.at(ix, iy, cn.int_p_ls[coll_no]);
+        f_m = distr.at(ix, iy, cn.int_p_m[coll_no]);
+        f_ms = distr.at(ix, iy, cn.int_p_ms[coll_no]);
+        r_interp = cn.interp_r[coll_no];
+
+        double rel_v_abs = sqrt(Vector2d(cn.rel_velocities[2 * coll_no], cn.rel_velocities[2 * coll_no + 1]).pow2())
+
+        omega = rel_v_abs * (f_l * f_m * pow(f_ls * f_ms / f_l / f_m, r_interp) - f_a * f_b);
+
+        // correct signs?
+        f_a += c_coll * omega;
+        f_b += c_coll * omega;
+        f_l -= c_coll * omega * (1 - r_interp);
+        f_m -= c_coll * omega * (1 - r_interp);
+        f_ls -= c_coll * omega * r_interp;
+        f_ms -= c_coll * omega * r_interp;
+
+        if ((f_a >= 0) and (f_b >= 0) and (f_l >= 0) and (f_m >= 0) and (f_ls >= 0) and (f_ms >= 0)) {
+            distr.at(ix, iy, cn.int_p_alpha[coll_no]) = f_a;
+            distr.at(ix, iy, cn.int_p_beta[coll_no]) = f_b;
+            distr.at(ix, iy, cn.int_p_l[coll_no]) = f_l;
+            distr.at(ix, iy, cn.int_p_ls[coll_no]) = f_ls;
+            distr.at(ix, iy, cn.int_p_m[coll_no]) = f_m;
+            distr.at(ix, iy, cn.int_p_ms[coll_no]) = f_ms;
+        }
+    }
 }

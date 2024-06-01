@@ -29,17 +29,17 @@ int main() {
     logging(distribution);
     for (int time_step = 0; time_step < 10; time_step++) {
         //space step / 2
-        distribution.stepX(tau_x);
-        distribution.stepY(tau_y);
-        distribution.stepX(tau_x);
+        // distribution.stepX(tau_x);
+        // distribution.stepY(tau_y);
+        // distribution.stepX(tau_x);
 
         //collision step
         // ditribution.collisionStep11(collision_nodes);
 
         //space step / 2
-        distribution.stepX(tau_x);
-        distribution.stepY(tau_y);
-        distribution.stepX(tau_x);  
+        // distribution.stepX(tau_x);
+        // distribution.stepY(tau_y);
+        // distribution.stepX(tau_x);  
         //save      
         logging_append(distribution);
     }
