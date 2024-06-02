@@ -14,7 +14,8 @@ class VMesh {
     int max_p;
     int n_v_x, n_v_y;
 public:
-    double c_norm;
+    OneDArr p_to_index_x, p_to_index_y;
+    double c_norm, v_ph_vol;
     OneDArr exp_t1, exp_t2, abs_v_x, sign_v_x, abs_v_y, sign_v_y, v_squared;
     VMesh(double v_cut, int n_v_x, int n_v_y, double temp_1, double temp_2);
     int indexToP(Index2d i); 

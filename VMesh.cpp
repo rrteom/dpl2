@@ -1,7 +1,8 @@
 #include "VMesh.hpp"
 
 double initDistrFunction(double v_x, double v_y, double temp_1, double temp_2) {
-    return exp(-0.5 * temp_1 / temp_2 * (v_x * v_x + v_y * v_y));
+    // return exp(-0.5 * temp_1 / temp_2 * (v_x * v_x + v_y * v_y)) + exp(-0.5 * temp_1 / temp_2 / 0.95 * (v_x * v_x + v_y * v_y))/ pow(0.95, 1.5);
+     return exp(-0.5 * temp_1 / temp_2 * (v_x * v_x + v_y * v_y));
 }
 
 double expTemp1(double v_x, double v_y) {
@@ -15,6 +16,7 @@ double expTemp2(double v_x, double v_y, double temp_1, double temp_2) {
 
 VMesh::VMesh(double v_cut, int n_v_x, int n_v_y, double temp_1, double temp_2) : v_cut(v_cut), v_x_mesh(-v_cut, v_cut, n_v_x), 
                         v_y_mesh(-v_cut, v_cut, n_v_y), n_v_x(n_v_x), n_v_y(n_v_y) {
+    double n_0 = 1;
     int p = 0;
     c_norm = 0;
     index_to_p.resize(n_v_x, n_v_y);
@@ -24,7 +26,9 @@ VMesh::VMesh(double v_cut, int n_v_x, int n_v_y, double temp_1, double temp_2) :
             if (v_2 <= pow(v_cut, 2)) {
                 p++;
                 index_to_p.at(a_x, a_y) = p;
-                double init_distr_value = initDistrFunction(v_x_mesh.at(a_x), v_y_mesh.at(a_y), temp_1, temp_2);
+                p_to_index_x.push_back(static_cast<double>(a_x));
+                p_to_index_y.push_back(static_cast<double>(a_y));
+                double init_distr_value = n_0 * initDistrFunction(v_x_mesh.at(a_x), v_y_mesh.at(a_y), temp_1, temp_2);
                 c_norm += init_distr_value;
                 v_squared.push_back(v_2);
                 init_v_distr.push_back(init_distr_value);
@@ -50,6 +54,10 @@ VMesh::VMesh(double v_cut, int n_v_x, int n_v_y, double temp_1, double temp_2) :
         }
     }
     max_p = p;
+    v_ph_vol = 4 * v_cut * v_cut / n_v_x / n_v_y;
+    for (int p = 1; p <= max_p; p++) {
+        init_v_distr.at(p) = init_v_distr.at(p) / c_norm / v_ph_vol;
+    }
 }
 
 int VMesh::indexToP(Index2d i) {

@@ -1,6 +1,6 @@
 #include "CollisionNodes.hpp"
 
-CollisionNodes::CollisionNodes(int n_nodes, VMesh* p_v_mesh, double s_max) : n_nodes(n_nodes), p_v_mesh(p_v_mesh), s_max(s_max) {
+CollisionNodes::CollisionNodes(int n_nodes, VMesh* p_v_mesh, double s_max_) : n_nodes(n_nodes), p_v_mesh(p_v_mesh), s_max(s_max_) {
     collisions = std::vector<double>(6 * n_nodes);
     rel_velocities = std::vector<double>(2 * n_nodes);
     thetas = std::vector<double>(n_nodes);
@@ -186,7 +186,7 @@ void CollisionNodes::findInterpNodes() {
                 is_active[coll_no] = false;
                 continue;
             }
-            r_interp = (energy_true - energy_eta_res) / (energy_near - energy_eta_res);
+            r_interp = (energy_true - energy_near) / (energy_eta_res - energy_near);
         }
         if (!nodes_found) {
             is_active[coll_no] = false;

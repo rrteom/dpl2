@@ -1,5 +1,6 @@
 #include "distribution.hpp"
 
+
 double sgn (double x) {
     return (x > 0) ? 1 : ((x < 0) ? -1 : 0);
 }
@@ -13,11 +14,11 @@ double mc_limiter_func (double f_i_minus, double f_i, double f_i_plus) {
 
 Distribution::Distribution(double L_x, double L_y, int n_h_x, int n_h_y,
                  double v_cut, int n_v_x, int n_v_y,
-                 double tau, double temp_1, double temp_2,
+                 double temp_1, double temp_2,
                  int ix_chip_start, int iy_chip_start, int ix_chip_end, int iy_chip_end) : 
             L_x(L_x), L_y(L_y), n_h_x(n_h_x), n_h_y(n_h_y), h_x(L_x / n_h_x), h_y(L_y / n_h_y),
             v_cut(v_cut), n_v_x(n_v_x), n_v_y(n_v_y),
-            tau(tau), temp_1(temp_1), temp_2(temp_2),
+            temp_1(temp_1), temp_2(temp_2),
             ix_chip_start(ix_chip_start), iy_chip_start(iy_chip_start), ix_chip_end(ix_chip_end), iy_chip_end(iy_chip_end),
             x_mesh(0, L_x, n_h_x), y_mesh(0, L_y, n_h_y), v_mesh(v_cut, n_v_x, n_v_y, temp_1, temp_2),
             chip_mask(n_h_x, n_h_y) 
@@ -232,7 +233,7 @@ TwoDArr Distribution::getConcentration() {
             for (int p = 1; p <= distr.dimp_; p++) {
                 n_current += distr.at(i, j, p);
             }
-            n.at(i, j) = n_current / v_mesh.c_norm;
+            n.at(i, j) = n_current * v_mesh.v_ph_vol;
         }
     }
     return n;
@@ -248,7 +249,7 @@ TwoDArr Distribution::getTemperature() {
                 t_current += distr.at(i, j, p) * v_mesh.v_squared.at(p);
             }
             if (n.at(i, j) != 0)
-                temperature.at(i, j) = t_current  / 2 / n.at(i, j) * temp_1 / v_mesh.c_norm;
+                temperature.at(i, j) = t_current / 2 / n.at(i, j) * temp_1 * v_mesh.v_ph_vol;
         }
     }
     return temperature;
@@ -258,11 +259,13 @@ double Distribution::getTau0() {
     return std::min(h_x, h_y) / v_cut;
 }
 
-void Distribution::collisionStep11(CollisionNodes cn) {
-    double omega, r_interp, f_a, f_b, f_l, f_ls, f_m, f_ms;
+void Distribution::collisionStep11(CollisionNodes cn, double tau_coll) {
+    double f_a_old, f_b_old, f_l_old, f_ls_old, f_m_old, f_ms_old, r_interp;
+    int p_a, p_b, p_l, p_m, p_ls, p_ms;
     int n_0 = v_mesh.maxP();
     double dv_x = 2 * v_cut / n_v_x, dv_y = 2 * v_cut / n_v_y;
-    double c_coll = cn.s_max  / 2 * dv_x * dv_y * n_0 * n_0 / cn.n_nodes;
+    // double c_coll = cn.s_max  / 2 * dv_x * dv_y * n_0 * n_0 / static_cast<double>(cn.n_nodes) * tau_coll;
+    double c_coll = cn.s_max  / 2 * 2 * M_PI * v_cut * v_cut * n_0 / static_cast<double>(cn.n_nodes) * tau_coll;
     int coll_no;
 
     int ix = 1, iy = 1;
@@ -271,34 +274,128 @@ void Distribution::collisionStep11(CollisionNodes cn) {
         coll_no = permutation[initial_no];
         if (!cn.is_active[coll_no])
             continue;
+        
+        p_a = cn.int_p_alpha[coll_no];
+        p_b = cn.int_p_beta[coll_no];
+        p_l = cn.int_p_l[coll_no];
+        p_ls = cn.int_p_ls[coll_no];
+        p_m = cn.int_p_m[coll_no];
+        p_ms = cn.int_p_ms[coll_no];
 
-        f_a = distr.at(ix, iy, cn.int_p_alpha[coll_no]);
-        f_b = distr.at(ix, iy, cn.int_p_beta[coll_no]);
-        f_l = distr.at(ix, iy, cn.int_p_l[coll_no]);
-        f_ls = distr.at(ix, iy, cn.int_p_ls[coll_no]);
-        f_m = distr.at(ix, iy, cn.int_p_m[coll_no]);
-        f_ms = distr.at(ix, iy, cn.int_p_ms[coll_no]);
+        if (p_a == p_b) 
+            continue;
+
+        f_a_old = distr.at(ix, iy, p_a);
+        f_b_old = distr.at(ix, iy, p_b);
+        f_l_old = distr.at(ix, iy, p_l);
+        f_ls_old = distr.at(ix, iy, p_ls);
+        f_m_old = distr.at(ix, iy, p_m);
+        f_ms_old = distr.at(ix, iy, p_ms);
         r_interp = cn.interp_r[coll_no];
 
         double rel_v_abs = sqrt(Vector2d(cn.rel_velocities[2 * coll_no], cn.rel_velocities[2 * coll_no + 1]).pow2());
+        double omega;
+        if (f_l_old  * f_m_old == 0) {
+            omega = 0;
+        }
+        else {
+            omega = rel_v_abs * (f_l_old * f_m_old * pow(f_ls_old * f_ms_old / f_l_old / f_m_old, r_interp) - f_a_old * f_b_old);
+        }
 
-        omega = rel_v_abs * (f_l * f_m * pow(f_ls * f_ms / f_l / f_m, r_interp) - f_a * f_b);
+        double c_omega = c_coll * omega;
+        double c_omega_r = c_coll * omega * r_interp;
+        double c_o_r_1 = c_omega - c_omega_r;
+        // double c_omega = 0.01, c_omega_r = 0.005, c_o_r_1 = 0.005;
+        distr.at(ix, iy, p_a) = distr.at(ix, iy, p_a) + c_omega;
+        distr.at(ix, iy, p_b) = distr.at(ix, iy, p_b) + c_omega;
+        distr.at(ix, iy, p_ls) = distr.at(ix, iy, p_ls) - c_omega_r;
+        distr.at(ix, iy, p_ms) = distr.at(ix, iy, p_ms) - c_omega_r;
+        distr.at(ix, iy, p_l) = distr.at(ix, iy, p_l) - c_o_r_1;
+        distr.at(ix, iy, p_m) = distr.at(ix, iy, p_m) - c_o_r_1;            
 
-        // correct signs?
-        f_a += c_coll * omega;
-        f_b += c_coll * omega;
-        f_l -= c_coll * omega * (1 - r_interp);
-        f_m -= c_coll * omega * (1 - r_interp);
-        f_ls -= c_coll * omega * r_interp;
-        f_ms -= c_coll * omega * r_interp;
+        if ((distr.at(ix, iy, p_a) < 0) or (distr.at(ix, iy, p_b) < 0)
+             or (distr.at(ix, iy, p_ls) < 0) or (distr.at(ix, iy, p_ms) < 0)
+             or (distr.at(ix, iy, p_l) < 0) or (distr.at(ix, iy, p_m) < 0)) 
+        {
+            distr.at(ix, iy, cn.int_p_alpha[coll_no]) = f_a_old;
+            distr.at(ix, iy, cn.int_p_beta[coll_no]) = f_b_old;
+            distr.at(ix, iy, cn.int_p_l[coll_no]) = f_l_old;
+            distr.at(ix, iy, cn.int_p_ls[coll_no]) = f_ls_old;
+            distr.at(ix, iy, cn.int_p_m[coll_no]) = f_m_old;
+            distr.at(ix, iy, cn.int_p_ms[coll_no]) = f_ms_old;
+        }
+    }
+}
 
-        if ((f_a >= 0) and (f_b >= 0) and (f_l >= 0) and (f_m >= 0) and (f_ls >= 0) and (f_ms >= 0)) {
-            distr.at(ix, iy, cn.int_p_alpha[coll_no]) = f_a;
-            distr.at(ix, iy, cn.int_p_beta[coll_no]) = f_b;
-            distr.at(ix, iy, cn.int_p_l[coll_no]) = f_l;
-            distr.at(ix, iy, cn.int_p_ls[coll_no]) = f_ls;
-            distr.at(ix, iy, cn.int_p_m[coll_no]) = f_m;
-            distr.at(ix, iy, cn.int_p_ms[coll_no]) = f_ms;
+void Distribution::collisionStep(CollisionNodes cn, double tau_coll) {
+    double f_a_old, f_b_old, f_l_old, f_ls_old, f_m_old, f_ms_old, r_interp;
+    int p_a, p_b, p_l, p_m, p_ls, p_ms;
+    int n_0 = v_mesh.maxP();
+    double dv_x = 2 * v_cut / n_v_x, dv_y = 2 * v_cut / n_v_y;
+    double c_coll = cn.s_max  / v_cut * v_cut * n_0 / static_cast<double>(cn.n_nodes) * tau_coll / 2 / sqrt(2);
+    int coll_no;
+    TwoDArr chip_mask = getChipMask();
+    for (int ix = 1; ix <= n_h_x; ix++) {
+        for (int iy = 1; iy <= n_h_y; iy++) {
+            if (chip_mask.at(ix, iy) == 0) 
+                continue;
+            std::cout << "x = " << ix << " y = " << iy << std::endl;
+            std::vector<int> permutation = cn.generatePermutation();
+            for (int initial_no = 0; initial_no < permutation.size(); initial_no++) {
+                coll_no = permutation[initial_no];
+                if (!cn.is_active[coll_no])
+                    continue;
+                
+                p_a = cn.int_p_alpha[coll_no];
+                p_b = cn.int_p_beta[coll_no];
+                p_l = cn.int_p_l[coll_no];
+                p_ls = cn.int_p_ls[coll_no];
+                p_m = cn.int_p_m[coll_no];
+                p_ms = cn.int_p_ms[coll_no];
+
+                if (p_a == p_b) 
+                    continue;
+
+                f_a_old = distr.at(ix, iy, p_a);
+                f_b_old = distr.at(ix, iy, p_b);
+                f_l_old = distr.at(ix, iy, p_l);
+                f_ls_old = distr.at(ix, iy, p_ls);
+                f_m_old = distr.at(ix, iy, p_m);
+                f_ms_old = distr.at(ix, iy, p_ms);
+                r_interp = cn.interp_r[coll_no];
+
+                double rel_v_abs = sqrt(Vector2d(cn.rel_velocities[2 * coll_no], cn.rel_velocities[2 * coll_no + 1]).pow2());
+                double omega;
+                if (f_l_old  * f_m_old == 0) {
+                    omega = 0;
+                }
+                else {
+                    omega = rel_v_abs * (f_l_old * f_m_old * pow(f_ls_old * f_ms_old / f_l_old / f_m_old, r_interp) - f_a_old * f_b_old);
+                }
+
+                double c_omega = c_coll * omega;
+                double c_omega_r = c_coll * omega * r_interp;
+                double c_o_r_1 = c_omega - c_omega_r;
+                // double c_omega = 0.01, c_omega_r = 0.005, c_o_r_1 = 0.005;
+                distr.at(ix, iy, p_a) = distr.at(ix, iy, p_a) + c_omega;
+                distr.at(ix, iy, p_b) = distr.at(ix, iy, p_b) + c_omega;
+                distr.at(ix, iy, p_ls) = distr.at(ix, iy, p_ls) - c_omega_r;
+                distr.at(ix, iy, p_ms) = distr.at(ix, iy, p_ms) - c_omega_r;
+                distr.at(ix, iy, p_l) = distr.at(ix, iy, p_l) - c_o_r_1;
+                distr.at(ix, iy, p_m) = distr.at(ix, iy, p_m) - c_o_r_1;            
+
+                if ((distr.at(ix, iy, p_a) < 0) or (distr.at(ix, iy, p_b) < 0)
+                    or (distr.at(ix, iy, p_ls) < 0) or (distr.at(ix, iy, p_ms) < 0)
+                    or (distr.at(ix, iy, p_l) < 0) or (distr.at(ix, iy, p_m) < 0)) 
+                {
+                    distr.at(ix, iy, cn.int_p_alpha[coll_no]) = f_a_old;
+                    distr.at(ix, iy, cn.int_p_beta[coll_no]) = f_b_old;
+                    distr.at(ix, iy, cn.int_p_l[coll_no]) = f_l_old;
+                    distr.at(ix, iy, cn.int_p_ls[coll_no]) = f_ls_old;
+                    distr.at(ix, iy, cn.int_p_m[coll_no]) = f_m_old;
+                    distr.at(ix, iy, cn.int_p_ms[coll_no]) = f_ms_old;
+                }
+            }
         }
     }
 }
