@@ -106,7 +106,9 @@ void Distribution::stepY(double tau_y) {
                     f_one_d_lower.at(iy - iy_chip_end, p) = distr.at(ix, iy, p);
                 }
             }
-            solveOneDTask(f_one_d_upper, temp_2, temp_1, tau_y, h_y, v_mesh.abs_v_y, v_mesh.sign_v_y, v_mesh.exp_t2, v_mesh.exp_t1);    
+            if (iy_chip_start - 1 > 0) {
+                solveOneDTask(f_one_d_upper, temp_2, temp_1, tau_y, h_y, v_mesh.abs_v_y, v_mesh.sign_v_y, v_mesh.exp_t2, v_mesh.exp_t1);  
+            }  
             solveOneDTask(f_one_d_lower, temp_1, temp_2, tau_y, h_y, v_mesh.abs_v_y, v_mesh.sign_v_y, v_mesh.exp_t1, v_mesh.exp_t2);
             //uodate distr
             for (int iy = 1; iy < iy_chip_start; iy++) {
@@ -255,6 +257,35 @@ TwoDArr Distribution::getTemperature() {
     return temperature;
 }
 
+TwoDArr Distribution::getFlowX() {
+    TwoDArr q(distr.dimx_, distr.dimy_);
+    for (int i = 1; i <= distr.dimx_; i++) {
+        for (int j = 1; j <= distr.dimy_; j++) {
+            double q_current = 0;
+            for (int p = 1; p <= distr.dimp_; p++) {
+                q_current += distr.at(i, j, p) * v_mesh.abs_v_x.at(p) * v_mesh.sign_v_x.at(p) * v_mesh.v_squared.at(p);
+            }
+
+            q.at(i, j) = q_current * v_mesh.v_ph_vol;
+        }
+    }
+    return q;
+}
+
+TwoDArr Distribution::getFlowY() {
+    TwoDArr q(distr.dimx_, distr.dimy_);
+    for (int i = 1; i <= distr.dimx_; i++) {
+        for (int j = 1; j <= distr.dimy_; j++) {
+            double q_current = 0;
+            for (int p = 1; p <= distr.dimp_; p++) {
+                q_current += distr.at(i, j, p) * v_mesh.abs_v_y.at(p) * v_mesh.sign_v_y.at(p) * v_mesh.v_squared.at(p);
+            }
+            q.at(i, j) = q_current * v_mesh.v_ph_vol;
+        }
+    }
+    return q;
+}
+
 double Distribution::getTau0() {
     return std::min(h_x, h_y) / v_cut;
 }
@@ -339,7 +370,7 @@ void Distribution::collisionStep(CollisionNodes cn, double tau_coll) {
         for (int iy = 1; iy <= n_h_y; iy++) {
             if (chip_mask.at(ix, iy) == 0) 
                 continue;
-            std::cout << "x = " << ix << " y = " << iy << std::endl;
+            // std::cout << "x = " << ix << " y = " << iy << std::endl;
             std::vector<int> permutation = cn.generatePermutation();
             for (int initial_no = 0; initial_no < permutation.size(); initial_no++) {
                 coll_no = permutation[initial_no];

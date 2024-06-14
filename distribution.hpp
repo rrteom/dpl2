@@ -30,6 +30,8 @@ public:
     
     TwoDArr getConcentration();
     TwoDArr getTemperature();
+    TwoDArr getFlowX();
+    TwoDArr getFlowY();
     double getTau0();
     void step1DY(double tau_y);
     void collisionStep11(CollisionNodes cn, double tau_coll);
